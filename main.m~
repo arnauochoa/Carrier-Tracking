@@ -1,0 +1,5 @@
+clear; close all; clc;
+
+filepath = 'test_real_long.dat';
+
+signal = DataReader(filepath, );
