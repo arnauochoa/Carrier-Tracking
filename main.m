@@ -2,7 +2,7 @@ clear; close all; clc;
 
 filepath = 'test_real_long.dat';
 
-signal = DataReader(filepath, Inf);
+% signal = DataReader(filepath, Inf);
 
 load('subsignal.mat');
 
@@ -33,21 +33,24 @@ xlabel('w');
 Rs = xcorr(s, 'biased');
 Ss = fft(Rs, 2*N);
 
-figure;
-plot(fftshift(abs(Ss)));
-title("Spectral density from autocorrelation");
-xlabel('w');
+% figure;
+% plot(fftshift(abs(Ss)));
+% title('Spectral density from autocorrelation');
+% xlabel('w');
+% 
+% [Ss, f] = periodogram(s, rectwin(length(s)), [], fs);
+% figure
+% plot(f/1e6, 10*log10(Ss));
+% % plot([-flip(f); f], [flip(Ss); Ss]);
+% title('Periodogram');
+% xlabel('f (MHz)'); ylabel('PSD (dB/Hz)')
 
-[Ss, f] = periodogram(s, rectwin(length(s)), fs);
+[Swelch, fwelch] = pwelch(s, 30, 15, [], fs);
 figure
-plot(f, Ss);
-title("Spectral density from autocorrelation");
-xlabel('f (Hz)');
-
-[Swelch, fwelch] = pwelch(s, [], [], [], fs);
-figure
-plot([-flip(fwelch) fwelch], [flip(Swelch) Swelch]);
-xlabel('f (Hz)'); ylabel('PSD (dB/Hz)');
+% plot([-flip(fwelch); fwelch]./1e6, [flip(Swelch); Swelch]);
+plot(fwelch./1e6, 10*log10(Swelch)); hold on;
+xline(fIF/1e6);
+xlabel('f (MHz)'); ylabel('PSD (dB/Hz)');
 title('Welch periodogram');
 
 
