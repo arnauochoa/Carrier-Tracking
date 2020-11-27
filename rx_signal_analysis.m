@@ -2,7 +2,7 @@ clear; close all; clc;
 
 filepath = 'test_real_long.dat';
 
-Nsamp = 500*4096;
+Nsamp = 1000*4096;
 signal = DataReader(filepath, Nsamp);
 
 N = 2^20;
@@ -21,7 +21,7 @@ histogram(s);
 title('Quantized signal in time domain');
 xlabel('k');
 
-[Swelch, fwelch] = pwelch(s, 256, 0, 256, fs);
+[Swelch, fwelch] = pwelch(s, 512, 0, 512, fs);
 figure
 plot(fwelch./1e6, 10*log10(Swelch)); hold on;
 xline(fIF/1e6);
