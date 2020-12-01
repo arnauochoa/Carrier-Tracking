@@ -11,12 +11,12 @@ fDoppler    = 1755;     % Hz
 fIF         = 4.348e6;  % Hz
 fs          = 23.104e6; % Hz
 phi         = 0;        % Phase delay
-sLength     = duration/tR * prnLength; % Signal length in samples
+sLength     = duration/tR * prnLength; % Signal length in code samples
 tC          = tR/prnLength;
 
 %% Generation of synthetic signal
 % tVec        = 0:1/fs:duration-1/fs;                  % Vector of time
-% signal      = syntheticSignal(prn, kDelay, tC, sLength, fIF, phi, tVec);
+% signal      = syntheticSignal(prn, kDelay, tC, sLength, fIF, phi, tVec, fDoppler);
 
 % figure; plot(tVec(1:ceil(5*tC*fs)), signal(1:ceil(5*tC*fs)), 'o-');
 % xlabel('Time (s)');
@@ -35,26 +35,29 @@ cm = localCodeReplica(prn, kDelay, tC, sLength, tVec);
 nSamples = tR*fs;
 theta = zeros(duration/tR,1);
 Ve = zeros(duration/tR,1);
+I = zeros(duration/tR,1);
+Q = zeros(duration/tR,1);
 k = 2;
 for t=1:nSamples:length(signal)-nSamples
-    In = signal(t:t+nSamples-1).*cm(t:t+nSamples-1).*cos(2*pi*fIF*tVec(t:t+nSamples-1)-theta(k-1));
-    Qn = signal(t:t+nSamples-1).*cm(t:t+nSamples-1).*sin(2*pi*fIF*tVec(t:t+nSamples-1)-theta(k-1));
+    In = signal(t:t+nSamples-1).*cm(t:t+nSamples-1).*cos(2*pi*(fIF+fDoppler)*tVec(t:t+nSamples-1)-theta(k-1)); %add doppler in code
+    Qn = signal(t:t+nSamples-1).*cm(t:t+nSamples-1).*sin(2*pi*(fIF+fDoppler)*tVec(t:t+nSamples-1)-theta(k-1));
     
-    I = (1/nSamples)*sum(In);
-    Q = (1/nSamples)*sum(Qn);
+    I(k) = (1/nSamples)*sum(In);
+    Q(k) = (1/nSamples)*sum(Qn);
     
-    Ve(k) = atan2(Q,I);
-    theta(k) = theta(k-1) + Ve(k);
+    Ve(k) = atan2(Q(k),I(k));
+%     theta(k) = theta(k-1) - 0.01*Ve(k);
     k = k + 1;
 end
 
 %% Plots
 kVec = 1:duration/tR;
 
-figure; plot((kVec(1:5)-1)*tC, cm(1:5), 'o-');
+% figure; plot((kVec(1:5)-1)*tC, cm(1:5), 'o-');
 figure; plot(tVec(1:ceil(5*tC*fs)), signal(1:ceil(5*tC*fs)), 'o-');
 xlabel('Time (s)');
 ylabel('Amplitude');
+title('Quantized signal');
 
 figure; plot(kVec,theta*180/pi);
 xlabel('Time (ms)'); ylabel('Phase (deg)');
@@ -62,4 +65,10 @@ title('Carrier Phase Tracking');
 
 figure; plot(kVec,Ve*180/pi);
 xlabel('Time (ms)'); ylabel('Phase (deg)');
-title('Carrier Phase Tracking');
+title('Discriminator output');
+
+figure; plot(kVec,I, 'b'); hold on;
+plot(kVec, Q, 'r');
+% xlabel('Time (ms)'); ylabel('Phase (deg)');
+title('Discriminator output');
+legend('I', 'Q')
