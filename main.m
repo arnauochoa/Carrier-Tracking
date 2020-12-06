@@ -17,14 +17,14 @@ tC          = tR/prnLength;
 %% Generation of synthetic signal
 % tVec        = 0:1/fs:duration-1/fs;                  % Vector of time
 % signal      = syntheticSignal(prn, kDelay, tC, sLength, fIF, phi, tVec, fDoppler);
-
+% 
 % figure; plot(tVec(1:ceil(5*tC*fs)), signal(1:ceil(5*tC*fs)), 'o-');
 % xlabel('Time (s)');
 % ylabel('Amplitude');
 
 %% Loading real signal
 filepath = 'test_real_long.dat';
-tVec        = 0:1/fs:duration;                  % Vector of time
+tVec        = 0:1/fs:duration-1/fs;                  % Vector of time
 nSampSignal = duration*fs;
 signal      = DataReader(filepath, nSampSignal)';
 
@@ -39,8 +39,12 @@ I = zeros(duration/tR,1);
 Q = zeros(duration/tR,1);
 k = 2;
 for t=1:nSamples:length(signal)-nSamples
-    In = signal(t:t+nSamples-1).*cm(t:t+nSamples-1).*cos(2*pi*(fIF+fDoppler)*tVec(t:t+nSamples-1)-theta(k-1)); %add doppler in code
-    Qn = signal(t:t+nSamples-1).*cm(t:t+nSamples-1).*sin(2*pi*(fIF+fDoppler)*tVec(t:t+nSamples-1)-theta(k-1));
+    In = signal(t:t+nSamples-1)     ...
+        .*cm(t:t+nSamples-1)        ...
+        .*cos(2*pi*(fIF+fDoppler)*tVec(t:t+nSamples-1)-theta(k-1))  ; %add doppler in code
+    Qn = signal(t:t+nSamples-1)     ...
+        .*cm(t:t+nSamples-1)        ...
+        .*sin(2*pi*(fIF+fDoppler)*tVec(t:t+nSamples-1)-theta(k-1));
     
     I(k) = (1/nSamples)*sum(In);
     Q(k) = (1/nSamples)*sum(Qn);
