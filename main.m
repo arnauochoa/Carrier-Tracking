@@ -13,23 +13,22 @@ fs          = 23.104e6; % Hz
 phi         = 0;        % Phase delay
 sLength     = duration/tR * prnLength; % Signal length in code samples
 tC          = tR/prnLength;
+tVec        = 0:1/fs:duration-1/fs;                  % Vector of time
 
 %% Generation of synthetic signal
-% tVec        = 0:1/fs:duration-1/fs;                  % Vector of time
-% signal      = syntheticSignal(prn, kDelay, tC, sLength, fIF, phi, tVec, fDoppler);
-% 
+signal      = syntheticSignal(prn, kDelay, tC, fIF, phi, tVec, fDoppler);
+
 % figure; plot(tVec(1:ceil(5*tC*fs)), signal(1:ceil(5*tC*fs)), 'o-');
 % xlabel('Time (s)');
 % ylabel('Amplitude');
 
 %% Loading real signal
 filepath = 'test_real_long.dat';
-tVec        = 0:1/fs:duration-1/fs;                  % Vector of time
 nSampSignal = duration*fs;
-signal      = DataReader(filepath, nSampSignal)';
+% signal      = DataReader(filepath, nSampSignal)';
 
 %% Generation of local code replica
-cm = localCodeReplica(prn, kDelay, tC, sLength, tVec);
+cm = localCodeReplica(prn, kDelay, tC, tVec);
 
 %% PLL
 nSamples = tR*fs;
@@ -45,12 +44,12 @@ for t=1:nSamples:length(signal)-nSamples
     Qn = signal(t:t+nSamples-1)     ...
         .*cm(t:t+nSamples-1)        ...
         .*sin(2*pi*(fIF+fDoppler)*tVec(t:t+nSamples-1)-theta(k-1));
-    
+     
     I(k) = (1/nSamples)*sum(In);
     Q(k) = (1/nSamples)*sum(Qn);
     
-    Ve(k) = atan2(Q(k),I(k));
-%     theta(k) = theta(k-1) - 0.01*Ve(k);
+    Ve(k) = atan(Q(k)/I(k));
+    theta(k) = theta(k-1) + 0.05*Ve(k);
     k = k + 1;
 end
 
@@ -73,6 +72,6 @@ title('Discriminator output');
 
 figure; plot(kVec,I, 'b'); hold on;
 plot(kVec, Q, 'r');
-% xlabel('Time (ms)'); ylabel('Phase (deg)');
-title('Discriminator output');
+xlabel('Time (ms)'); 
+title('In-Phase and Quadrature components');
 legend('I', 'Q')

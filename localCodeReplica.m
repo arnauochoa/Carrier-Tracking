@@ -1,12 +1,11 @@
-function [cm] = localCodeReplica(prn, kDelay, tC, sLength, tVec)
+function [cm] = localCodeReplica(prn, kDelay, tC, tVec)
 
 % Initializations
-% kVec        = 1:sLength;                        % Vector of samples
 
 code        = ca_code(prn);
 % Code samples
-cm          = create_code_samples(code, tVec/tC); %normalize tvec wrt chip duration
+c          = create_code_samples(code, tVec/tC); %normalize tvec wrt chip duration
 % Shift in time
-cm          = circshift(cm, length(cm) - kDelay); 
-
+cm          = circshift(c, kDelay);%-5220 % extra -1 accounts for first sample which is code bit 1023 due to t=0
+% cm  = [cm(end-kDelay+1:end) cm(1:end-kDelay)];
 end
