@@ -10,7 +10,7 @@ kDelay      = 8945;     % samples of the PRN
 fDoppler    = 1755;     % Hz        Doppler shift
 fIF         = 4.348e6;  % Hz        Intermediate frequency
 fs          = 23.104e6; % Hz        Sampling frequency
-Bl          = 90;       % Hz        Equivalent bandwidth of the PLL
+Bl          = 30;       % Hz        Equivalent bandwidth of the PLL
 tI          = 1e-3;     % sec       Integration time
 sLength     = duration/tR * prnLength; % Signal length in code samples
 tC          = tR/prnLength;
@@ -18,7 +18,7 @@ tVec        = 0:1/fs:duration-1/fs;                  % Vector of time
 
 %% Generation of synthetic signal
 A           = 1;        % mW/s       Amplitude of the synthetic signal
-cno         = -20;       % dbHz      C/N0 of the synthetic signal
+cno         = 30;       % dbHz      C/N0 of the synthetic signal
 phi         = pi/3; 
 % phi = linspace(0, 2*pi, length(tVec));
 % phi = sin(2*pi*5*tVec);
