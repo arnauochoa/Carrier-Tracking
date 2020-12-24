@@ -3,7 +3,7 @@ clear; close all; clc;
 
 %% Initializations
 prn         = 20;       %           PRN index
-duration    = 5000e-3;  % sec   -   200 times the PRN
+duration    = 5000e-3;   % sec   -   200 times the PRN
 tR          = 1e-3;     % sec   -   PRN period
 prnLength   = 1023;     % samples of the PRN
 kDelay      = 8945;     % samples of the PRN
@@ -11,14 +11,14 @@ fDoppler    = 1755;     % Hz        Doppler shift
 fIF         = 4.348e6;  % Hz        Intermediate frequency
 fs          = 23.104e6; % Hz        Sampling frequency
 B           = fs/2;     % Hz        RF front-end BW
-Bl          = 40;       % Hz        Equivalent bandwidth of the PLL
+Bl          = 20;       % Hz        Equivalent bandwidth of the PLL
 tI          = 1e-3;     % sec       Integration time
 sLength     = duration/tR * prnLength; % Signal length in code samples
 tC          = tR/prnLength;
 tVec        = 0:1/fs:duration-1/fs;                  % Vector of time
 isFirstOrder = 0;
 Kpll        = 0.05;
-thresHist   = 1200e-3;  % sec       Threshold to compute the variance of Vd
+thresHist   = 1200e-3;  % sec       Threshold to compute  
 
 %% Generation of synthetic signal
 A           = 1;        % mW/s       Amplitude of the synthetic signal
@@ -86,12 +86,13 @@ end
 
 %% Results
 % Find k for convergence of Vd.
-VdConv = Vd(thresHist/tI:end);
+iK = 1;
+VdConv = Vd(iK:end);
 
-noisePowerVd = var(rad2deg(VdConv));
+noisePowerVd = var(VdConv);
 
 fprintf('\n==== RESULTS ====\n')
-fprintf('Noise power at Vd after %f seconds: %f deg^2 \n', thresHist, noisePowerVd);
+fprintf('Noise power at Vd after %f seconds: %f Hz^2\n', iK*tI, noisePowerVd);
 
 %% Plots
 kVec = 1:duration/tR;
