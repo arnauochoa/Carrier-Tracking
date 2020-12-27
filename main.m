@@ -11,18 +11,18 @@ fDoppler    = 1755;     % Hz        Doppler shift
 fIF         = 4.348e6;  % Hz        Intermediate frequency
 fs          = 23.104e6; % Hz        Sampling frequency
 B           = fs/2;     % Hz        RF front-end BW
-Bl          = 60;       % Hz        Equivalent bandwidth of the PLL
+Bl          = 30;       % Hz        Equivalent bandwidth of the PLL
 tI          = 1e-3;     % sec       Integration time
 sLength     = duration/tR * prnLength; % Signal length in code samples
 tC          = tR/prnLength;
 tVec        = 0:1/fs:duration-1/fs;                  % Vector of time
-isFirstOrder = 0;
-Kpll        = 0.05;
-thresHist   = 1200e-3;  % sec       Threshold to compute the variance of Vd
+isFirstOrder = 1;
+Kpll        = 0.01;     % Kpll = [0.01 0.05 0.1 0.5]
+thresHist   = 500e-3;   % sec       Threshold to compute the variance of Vd
 
 %% Generation of synthetic signal
 A           = 1;        % mW/s       Amplitude of the synthetic signal
-cno         = 60;       % dbHz      C/N0 of the synthetic signal
+cno         = 60;       % dbHz       C/N0 of the synthetic signal cn0 = [35 40 45 50 60];
 phi         = pi/3; 
 % phi = linspace(0, 2*pi, length(tVec));
 % phi = sin(2*pi*5*tVec);

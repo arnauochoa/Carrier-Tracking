@@ -3,8 +3,8 @@ clear all; close all; clc;
 Kpll = [0.01 0.05 0.1 0.5];
 cn0 = [35 40 45 50 60];
 
-noisePowerK001 = [652.237448 183.196869 52.791025 16.658201 1.599654];
-thresholdK001 = [500 500 500 500 500];
+noisePowerK001 = [666.9451 ];
+thresholdK001 = [];
 noisePowerK005 = [];
 thresholdK005 = [];
 noisePowerK01 = [];
