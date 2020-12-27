@@ -5,16 +5,51 @@ cn0 = [35 40 45 50 60];
 
 noisePowerK001 = [652.237448 183.196869 52.791025 16.658201 1.599654];
 thresholdK001 = [500 500 500 500 500];
-noisePowerK005 = [];
-thresholdK005 = [];
-noisePowerK01 = [];
-thresholdK01 = [];
-noisePowerK05 = [];
-thresholdK05 = [];
+noisePowerK005 = [677.620497 183.658355 54.505032 16.910811 1.639800];
+thresholdK005 = [500 500 500 500 500];
+noisePowerK01 = [698.782236 186.214484 54.790660 17.211559 1.720205];
+thresholdK01 = [500 500 500 500 500];
+noisePowerK05 = [915.654036 223.374036 70.439770 22.394798 2.072684];
+thresholdK05 = [500 500 500 500 500];
 
+noisePowerKdB = 10*log10([noisePowerK001' noisePowerK005' noisePowerK01' noisePowerK05']);
+noiseThresholdK = [thresholdK001' thresholdK005' thresholdK01' thresholdK05'];
 
+[KPLL,CN0] = meshgrid(Kpll,cn0);
 
+figure; plot(cn0, noisePowerKdB(:,1), ...
+             cn0, noisePowerKdB(:,2), ...
+             cn0, noisePowerKdB(:,3), ...
+             cn0, noisePowerKdB(:,4));
+xlabel('CN0'); ylabel('Noise Power (dB)');
+legend('Kpll = 0.01', 'Kpll = 0.05', 'Kpll = 0.1', 'Kpll = 0.5');
+title('Comparison of noise PSD at discriminator output');
 
+figure; plot(Kpll, noisePowerKdB(1,:), ...
+             Kpll, noisePowerKdB(2,:), ...
+             Kpll, noisePowerKdB(3,:), ...
+             Kpll, noisePowerKdB(4,:), ...
+             Kpll, noisePowerKdB(5,:));
+xlabel('Kpll'); ylabel('Noise Power (dB)');
+legend('CN0 = 35', 'CN0 = 40', 'CN0 = 45', 'CN0 = 50', 'CN0 = 60')
+title('Comparison of noise PSD at discriminator output');
+
+figure; plot(cn0, thresholdK001, ...
+             cn0, thresholdK005, ...
+             cn0, thresholdK01, ...
+             cn0, thresholdK05);
+xlabel('CN0'); ylabel('Convergence time (sec)');
+legend('Kpll = 0.01', 'Kpll = 0.05', 'Kpll = 0.1', 'Kpll = 0.5');
+title('Convergence time comparison');
+
+figure;
+[~,ph] = contourf(KPLL, CN0, noisePowerKdB);
+set(ph,'LineColor','none')
+grid off;
+xlabel('Kpll'); ylabel('CN0'); 
+k = colorbar;
+set(get(k,'label'),'string', 'Noise Power (dB)');
+title('Noise Power at Discriminator Output');
 
 %% Noise charactization plots: Second Order PLL
 Bl = [10 20 30 40 50 60];
@@ -37,12 +72,12 @@ noiseThreshold = [thresholdBl10' thresholdBl20' thresholdBl30' thresholdBl40' th
 
 [BL,CN0] = meshgrid(Bl,cn0);
 
-figure; plot(cn0, 10*log10(noisePowerBl10), ...
-             cn0, 10*log10(noisePowerBl20), ...
-             cn0, 10*log10(noisePowerBl30), ...
-             cn0, 10*log10(noisePowerBl40), ...
-             cn0, 10*log10(noisePowerBl50), ...
-             cn0, 10*log10(noisePowerBl60));
+figure; plot(cn0, noisePowerdB(:,1), ...
+             cn0, noisePowerdB(:,2), ...
+             cn0, noisePowerdB(:,3), ...
+             cn0, noisePowerdB(:,4), ...
+             cn0, noisePowerdB(:,5), ...
+             cn0, noisePowerdB(:,6));
 xlabel('CN0'); ylabel('Noise Power (dB)');
 legend('BW = 10 Hz', 'BW = 20 Hz', 'BW = 30 Hz', 'BW = 40 Hz', 'BW = 50 Hz', 'BW = 60 Hz')
 title('Comparison of noise PSD at discriminator output');

@@ -17,7 +17,7 @@ sLength     = duration/tR * prnLength; % Signal length in code samples
 tC          = tR/prnLength;
 tVec        = 0:1/fs:duration-1/fs;                  % Vector of time
 isFirstOrder = 1;
-Kpll        = 0.5;     % Kpll = [0.01 0.05 0.1 0.5]
+Kpll        = 0.1;     % Kpll = [0.01 0.05 0.1 0.5]
 thresHist   = 500e-3;   % sec       Threshold to compute the variance of Vd
 
 %% Generation of synthetic signal
