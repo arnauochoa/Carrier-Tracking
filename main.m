@@ -11,19 +11,19 @@ fDoppler    = 1755;     % Hz        Doppler shift
 fIF         = 4.348e6;  % Hz        Intermediate frequency
 fs          = 23.104e6; % Hz        Sampling frequency
 B           = fs/2;     % Hz        RF front-end BW
-Bl          = 30;       % Hz        Equivalent bandwidth of the PLL
+Bl          = 10;       % Hz        Equivalent bandwidth of the PLL
 tI          = 1e-3;     % sec       Integration time
 sLength     = duration/tR * prnLength; % Signal length in code samples
 tC          = tR/prnLength;
 tVec        = 0:1/fs:duration-1/fs;                  % Vector of time
-isFirstOrder = 1;
-Kpll        = 0.5;     % Kpll = [0.01 0.05 0.1 0.5]
+isFirstOrder = 0;
+Kpll        = 0.01;     % Kpll = [0.01 0.05 0.1 0.5]
 thresHist   = 500e-3;   % sec       Threshold to compute the variance of Vd
 
 %% Generation of synthetic signal
 A           = 1;        % mW/s       Amplitude of the synthetic signal
 cno         = 60;       % dbHz       C/N0 of the synthetic signal cn0 = [35 40 45 50 60];
-phi         = pi/3; 
+phi         = pi/4; 
 % phi = linspace(0, 2*pi, length(tVec));
 % phi = sin(2*pi*5*tVec);
 signal      = syntheticSignal(prn, kDelay, A, cno, tC, fIF, phi, tVec, fDoppler, B);
@@ -53,7 +53,7 @@ for t=1:nSamples:length(signal)-nSamples
     In = signal(t:t+nSamples-1)     ...
         .*cm(t:t+nSamples-1)        ... %add doppler in code
         .*cos(2*pi*(fIF+fDoppler)*tVec(t:t+nSamples-1) - theta(t:t+nSamples-1));
-    Qn = signal(t:t+nSamples-1)     ...
+    Qn = -signal(t:t+nSamples-1)    ...
         .*cm(t:t+nSamples-1)        ...
         .*sin(2*pi*(fIF+fDoppler)*tVec(t:t+nSamples-1) - theta(t:t+nSamples-1));
      
@@ -61,10 +61,10 @@ for t=1:nSamples:length(signal)-nSamples
     Q(k) = (1/nSamples)*sum(Qn); 
     
     if isFirstOrder
-        Vd(k) = atan2( Q(k), I(k) );
+        Vd(k) = - atan2( Q(k), I(k) );
         theta(t+nSamples:t+2*nSamples-1) = theta(t:t+nSamples-1) + Kpll * Vd(k);
     else
-        Vd(k) = atan2( Q(k), I(k) );
+        Vd(k) = - atan2( Q(k), I(k) );
         
         K1 = 60/23 * Bl * tI; 
         K2 = 4/9 * K1^2;
@@ -127,7 +127,11 @@ title('Q-I ratio');
 figure;
 histogram(rad2deg(VdConv));
 xlabel('Vd (deg)'); ylabel('Counts');
-title('Distribution of Vd')
+title('Distribution of Vd');
 
-
+[Swelch, fwelch] = pwelch(VdConv, 512, 0, 512, fs);
+figure
+plot(fwelch./1e6, 10*log10(Swelch));
+xlabel('f (MHz)'); ylabel('PSD (dB/Hz)');
+title('Welch periodogram of the discriminator output');
 
