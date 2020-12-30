@@ -2,28 +2,28 @@ clear; close all; clc;
 %blabla
 
 %% Initializations
-prn         = 20;       %           PRN index
-duration    = 5000e-3;  % sec   -   200 times the PRN
-tR          = 1e-3;     % sec   -   PRN period
+prn         = 20;       % -         PRN index
+duration    = 5000e-3;  % sec       200 times the PRN
+tR          = 1e-3;     % sec       PRN period
 prnLength   = 1023;     % samples of the PRN
 kDelay      = 8945;     % samples of the PRN
 fDoppler    = 1755;     % Hz        Doppler shift
 fIF         = 4.348e6;  % Hz        Intermediate frequency
 fs          = 23.104e6; % Hz        Sampling frequency
 B           = fs/2;     % Hz        RF front-end BW
-Bl          = 10;       % Hz        Equivalent bandwidth of the PLL
 tI          = 1e-3;     % sec       Integration time
 sLength     = duration/tR * prnLength; % Signal length in code samples
 tC          = tR/prnLength;
-tVec        = 0:1/fs:duration-1/fs;                  % Vector of time
-isFirstOrder = 0;
-Kpll        = 0.01;     % Kpll = [0.01 0.05 0.1 0.5]
+tVec        = 0:1/fs:duration-1/fs;    % Vector of time
+order       = 2;        % -         Order of the PLL. 1 or 2
+Kpll        = 0.01;     % -         Gain of the 1st order PLL
+Bl          = 10;       % Hz        Equivalent bandwidth of the 2nd order PLL
 thresHist   = 500e-3;   % sec       Threshold to compute the variance of Vd
 
 %% Generation of synthetic signal
 A           = 1;        % mW/s       Amplitude of the synthetic signal
-cno         = 60;       % dbHz       C/N0 of the synthetic signal cn0 = [35 40 45 50 60];
-phi         = pi/4; 
+cno         = 60;       % dbHz       C/N0 of the synthetic signal
+phi         = deg2rad(10);
 % phi = linspace(0, 2*pi, length(tVec));
 % phi = sin(2*pi*5*tVec);
 signal      = syntheticSignal(prn, kDelay, A, cno, tC, fIF, phi, tVec, fDoppler, B);
@@ -49,6 +49,7 @@ I = zeros(duration/tR,1);
 Q = zeros(duration/tR,1);
 k = 2;
 iTs = 0:1/fs:tI-1/fs;
+% iTs = 1/fs:1/fs:tI;
 for t=1:nSamples:length(signal)-nSamples
     In = signal(t:t+nSamples-1)     ...
         .*cm(t:t+nSamples-1)        ... %add doppler in code
@@ -60,26 +61,28 @@ for t=1:nSamples:length(signal)-nSamples
     I(k) = (1/nSamples)*sum(In);
     Q(k) = (1/nSamples)*sum(Qn); 
     
-    if isFirstOrder
-        Vd(k) = - atan2( Q(k), I(k) );
-        theta(t+nSamples:t+2*nSamples-1) = theta(t:t+nSamples-1) + Kpll * Vd(k);
-    else
-        Vd(k) = - atan2( Q(k), I(k) );
-        
-        K1 = 60/23 * Bl * tI; 
-        K2 = 4/9 * K1^2;
-        K3 = 2/27 * K1^3;
+    Vd(k) = - atan2( Q(k), I(k) );
+    
+    switch order
+        case 1 % First order
+            theta(t+nSamples:t+2*nSamples-1) = theta(t:t+nSamples-1) + Kpll * Vd(k);
+        case 2 % Second order
+            K1 = 60/23 * Bl * tI; 
+            K2 = 4/9 * K1^2;
+            K3 = 2/27 * K1^3;
 
-        if k-2 <= 0,    Vc2 = 0;        Vd2 = 0;
-        else,           Vc2 = Vc(k-2);  Vd2 = Vd(k-2);      end
+            if k-2 <= 0,    Vc2 = 0;        Vd2 = 0;
+            else,           Vc2 = Vc(k-2);  Vd2 = Vd(k-2);      end
 
-        Vc(k) = 2*Vc(k-1) -                     ...
-                Vc2 +                           ...
-                (K1+K2+K3) * Vd(k)/(2*pi*tI)  - ...
-                (2*K1+K2) * Vd(k-1)/(2*pi*tI) + ...
-                K1 * Vd2/(2*pi*tI);
+            Vc(k) = 2*Vc(k-1) -                     ...
+                    Vc2 +                           ...
+                    (K1+K2+K3) * Vd(k)/(2*pi*tI)  - ...
+                    (2*K1+K2) * Vd(k-1)/(2*pi*tI) + ...
+                    K1 * Vd2/(2*pi*tI);
 
-        theta(t+nSamples:t+2*nSamples-1) = theta(t:t+nSamples-1) + 2*pi*Vc(k)*iTs;
+            theta(t+nSamples:t+2*nSamples-1) = theta(t:t+nSamples-1) + 2*pi*Vc(k)*iTs;
+        otherwise
+            error('Invalid order value');
     end
     k = k + 1;
 end
@@ -110,10 +113,12 @@ figure; plot(kVec,Vd*180/pi);
 xlabel('Time (ms)'); ylabel('Vd(t) (deg)');
 title('Discriminator output');
 
-figure; plot(kVec,Vc*180/pi);
-xlabel('Time (ms)'); ylabel('Vc(t) (Hz)');
-title('NCO input signal');
-
+if order == 2
+    figure; plot(kVec,Vc*180/pi);
+    xlabel('Time (ms)'); ylabel('Vc(t) (Hz)');
+    title('NCO input signal');
+end
+    
 figure; plot(kVec,I, 'b'); hold on;
 plot(kVec, Q, 'r');
 xlabel('Time (ms)'); 
