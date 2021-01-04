@@ -80,8 +80,8 @@ for t=1:nSamples:length(signal)-nSamples
                     (2*K1+K2) * Vd(k-1)/(2*pi*tI) + ...
                     K1 * Vd2/(2*pi*tI);
 
-%             theta(t+nSamples:t+2*nSamples-1) = theta(t:t+nSamples-1) + 2*pi*Vc(k)*iTs;
-%             avgTheta(k) = mean(theta(t+nSamples:t+2*nSamples-1))
+            theta(t+nSamples:t+2*nSamples-1) = theta(t:t+nSamples-1) + 2*pi*Vc(k)*iTs;
+            avgTheta(k) = 
         otherwise
             error('Invalid order value');
     end
@@ -106,7 +106,7 @@ xlabel('Time (s)');
 ylabel('Amplitude');
 title('Quantized signal');
 
-figure; plot(theta(nSamples/2:nSamples:end)*180/pi);
+figure; plot(theta(nSamples-1:nSamples:end)*180/pi);
 xlabel('Time (ms)'); ylabel('Phase (deg)');
 title('Carrier Phase Tracking');
 
