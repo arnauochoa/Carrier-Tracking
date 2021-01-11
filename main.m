@@ -26,7 +26,7 @@ cno         = 60;       % dbHz       C/N0 of the synthetic signal
 phi         = deg2rad(30);
 % phi = linspace(0, 2*pi, length(tVec));
 % phi = sin(2*pi*5*tVec);
-signal      = syntheticSignal(prn, kDelay, A, cno, tC, fIF, phi, tVec, fDoppler, B);
+% signal      = syntheticSignal(prn, kDelay, A, cno, tC, fIF, phi, tVec, fDoppler, B);
 
 % figure; plot(tVec(1:ceil(5*tC*fs)), signal(1:ceil(5*tC*fs)), 'o-');
 % xlabel('Time (s)');
@@ -35,7 +35,7 @@ signal      = syntheticSignal(prn, kDelay, A, cno, tC, fIF, phi, tVec, fDoppler,
 %% Loading real signal
 filepath = 'test_real_long.dat';
 nSampSignal = duration*fs;
-% signal      = DataReader(filepath, nSampSignal)';
+signal      = DataReader(filepath, nSampSignal)';
 
 %% Generation of local code replica
 cm = localCodeReplica(prn, kDelay, tC, tVec);
@@ -45,20 +45,24 @@ nSamples = tI*fs;
 theta_hat = zeros(duration/tR,1);
 Vd = zeros(duration/tR,1);
 Vc = zeros(duration/tR,1);
+Vc(1) = -fDoppler;
 I = zeros(duration/tR,1);
 Q = zeros(duration/tR,1);
 k = 2;
-% iTs = 0:1/fs:tI-1/fs;
-iTs = (1/fs:1/fs:tI) - tI/2;
+iTs = (0:1/fs:tI-1/fs) - tI/2;
+% iTs = (1/fs:1/fs:tI) - tI/2;
 for t=1:nSamples:length(signal)-nSamples
     In = signal(t:t+nSamples-1)     ...
         .*cm(t:t+nSamples-1)        ... %add doppler in code
-        .*cos(2*pi*(fIF+fDoppler)*tVec(t:t+nSamples-1) ...
+        .*cos(2*pi*(fIF)*tVec(t:t+nSamples-1) ...
         - 2*pi*Vc(k-1)*iTs - theta_hat(k-1));
     Qn = -signal(t:t+nSamples-1)    ...
         .*cm(t:t+nSamples-1)        ...
-        .*sin(2*pi*(fIF+fDoppler)*tVec(t:t+nSamples-1) ...
+        .*sin(2*pi*(fIF)*tVec(t:t+nSamples-1) ...
         - 2*pi*Vc(k-1)*iTs - theta_hat(k-1));
+    % theta_hat(k-1)): phase at beginning of integration interval
+    % 2*pi*Vc(k-1)*iTs: phase correction due to doppler within integration
+    % interval
      
     I(k) = (1/nSamples)*sum(In);
     Q(k) = (1/nSamples)*sum(Qn); 
@@ -73,7 +77,7 @@ for t=1:nSamples:length(signal)-nSamples
             K2 = 4/9 * K1^2;
             K3 = 2/27 * K1^3;
 
-            if k-2 <= 0,    Vc2 = 0;        Vd2 = 0;
+            if k-2 <= 0,    Vc2 = Vc(1);    Vd2 = 0;
             else,           Vc2 = Vc(k-2);  Vd2 = Vd(k-2);      end
 
             Vc(k) = 2*Vc(k-1) -                     ...
@@ -82,9 +86,7 @@ for t=1:nSamples:length(signal)-nSamples
                     (2*K1+K2) * Vd(k-1)/(2*pi*tI) + ...
                     K1 * Vd2/(2*pi*tI);
                 
-            theta_hat(k) = theta_hat(k-1) + 2*pi*Vc(k)*tI;
-%             theta(t+nSamples:t+2*nSamples-1) = theta(t:t+nSamples-1) + 2*pi*Vc(k)*iTs;
-%             avgTheta(k) = mean(theta(t+nSamples:t+2*nSamples-1))
+            theta_hat(k) = theta_hat(k-1) + 2*pi*Vc(k-1)*tI;
         otherwise
             error('Invalid order value');
     end
