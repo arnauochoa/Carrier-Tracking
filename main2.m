@@ -1,9 +1,16 @@
-clear; close all; clc;
-%blabla
+clear all; close all;
+
+% available_graphics_toolkits ()
+% graphics_toolkit("gnuplot");
+% graphics_toolkit("qt");
+% graphics_toolkit("fltk");
+
+% For Octave only
+% pkg load signal;
 
 %% Initializations
 prn         = 20;       % -         PRN index
-duration    = 5000e-3;  % sec       200 times the PRN
+duration    = 3000e-3;  % sec       200 times the PRN
 tR          = 1e-3;     % sec       PRN period
 prnLength   = 1023;     % samples of the PRN
 kDelay      = 8945;     % samples of the PRN
@@ -26,7 +33,7 @@ cno         = 60;       % dbHz       C/N0 of the synthetic signal
 phi         = deg2rad(30);
 % phi = linspace(0, 2*pi, length(tVec));
 % phi = sin(2*pi*5*tVec);
-% signal      = syntheticSignal(prn, kDelay, A, cno, tC, fIF, phi, tVec, fDoppler, B);
+signal      = syntheticSignal(prn, kDelay, A, cno, tC, fIF, phi, tVec, fDoppler, B);
 
 % figure; plot(tVec(1:ceil(5*tC*fs)), signal(1:ceil(5*tC*fs)), 'o-');
 % xlabel('Time (s)');
@@ -42,31 +49,46 @@ cm = localCodeReplica(prn, kDelay, tC, tVec);
 
 %% PLL
 nSamples = tI*fs;
-theta_hat = zeros(duration/tR,1);
 Vd = zeros(duration/tR,1);
 Vc = zeros(duration/tR,1);
 I = zeros(duration/tR,1);
 Q = zeros(duration/tR,1);
+theta_hat = zeros(duration/tR,1);
+
+% Frequency difference between the local replica and the incoming signal,
+switch order
+  case 1 % First order
+    freq_diff = 0;
+  case 2 % Second order
+    freq_diff = 0;
+  otherwise
+    error('Invalid order value');
+end
+
+open_loop = false;
+
 k = 2;
-iTs = 0:1/fs:tI-1/fs - tI/2;
-% iTs = (1/fs:1/fs:tI) - tI/2;
+iTs = [0:1/fs:tI-1/fs] - tI/2;
+% - tI/2 is added to be conformant with theory, it works without it as 
+% the dynamic of the phase of the incoming signal is low wrt the frequency of 
+% the loop itself.
 for t=1:nSamples:length(signal)-nSamples
-    In = signal(t:t+nSamples-1)     ...
-        .*cm(t:t+nSamples-1)        ... %add doppler in code
-        .*cos(2*pi*(fIF+fDoppler)*tVec(t:t+nSamples-1) ...
+    In = signal(t:t+nSamples-1).*cm(t:t+nSamples-1);  
+    if (open_loop == false)
+      Qn = -In.*sin(2*pi*(fIF+fDoppler + freq_diff)*tVec(t:t+nSamples-1) ...
         - 2*pi*Vc(k-1)*iTs - theta_hat(k-1));
-    Qn = -signal(t:t+nSamples-1)    ...
-        .*cm(t:t+nSamples-1)        ...
-        .*sin(2*pi*(fIF+fDoppler)*tVec(t:t+nSamples-1) ...
+      In = In.*cos(2*pi*(fIF+fDoppler + freq_diff)*tVec(t:t+nSamples-1) ...
         - 2*pi*Vc(k-1)*iTs - theta_hat(k-1));
-    % theta_hat(k-1)): phase at beginning of integration interval
-    % 2*pi*Vc(k-1)*iTs: phase correction due to doppler within integration
-    % interval
-     
+    else
+      Qn = -In.*sin(2*pi*(fIF+fDoppler + freq_diff)*tVec(t:t+nSamples-1));
+      In = In.*cos(2*pi*(fIF+fDoppler + freq_diff)*tVec(t:t+nSamples-1));
+    end
+    
     I(k) = (1/nSamples)*sum(In);
     Q(k) = (1/nSamples)*sum(Qn); 
     
-    Vd(k) = - atan2( Q(k), I(k) );
+    % Vd(k) = - atan2( Q(k), I(k) );
+    Vd(k) = - atan(Q(k)/I(k));
     
     switch order
         case 1 % First order
@@ -84,7 +106,7 @@ for t=1:nSamples:length(signal)-nSamples
                     (K1+K2+K3) * Vd(k)/(2*pi*tI)  - ...
                     (2*K1+K2) * Vd(k-1)/(2*pi*tI) + ...
                     K1 * Vd2/(2*pi*tI);
-                
+
             theta_hat(k) = theta_hat(k-1) + 2*pi*Vc(k-1)*tI;
         otherwise
             error('Invalid order value');
@@ -110,7 +132,8 @@ xlabel('Time (s)');
 ylabel('Amplitude');
 title('Quantized signal');
 
-figure; plot(theta_hat*180/pi);
+figure; % plot(theta(nSamples/2:nSamples:end)*180/pi);
+plot(kVec,theta_hat*180/pi);
 xlabel('Time (ms)'); ylabel('Phase (deg)');
 title('Carrier Phase Tracking');
 
@@ -119,7 +142,7 @@ xlabel('Time (ms)'); ylabel('Vd(t) (deg)');
 title('Discriminator output');
 
 if order == 2
-    figure; plot(kVec,Vc*180/pi);
+    figure; plot(kVec,Vc);
     xlabel('Time (ms)'); ylabel('Vc(t) (Hz)');
     title('NCO input signal');
 end
@@ -135,19 +158,14 @@ xlabel('Time (ms)'); ylabel('Q/I (t) (Hz)');
 title('Q-I ratio');
 
 figure;
-histogram(rad2deg(VdConv)); 
+hist(rad2deg(VdConv)); 
 xlabel('Vd (deg)'); ylabel('Counts');
 title('Distribution of Vd');
 
-figure;
-qqplot(rad2deg(VdConv))
-xlabel('Standard Normal Quantiles'); ylabel('Quantiles of Vd');
-title('QQ Plot of Vd vs Standard Normal');
+% TODO: Add qqplot
 
 [Swelch, fwelch] = pwelch(VdConv, 512, 0, 512, 1/tI);
-figure;
+figure
 plot(fwelch./1e3, 10*log10(Swelch));
 xlabel('f (kHz)'); ylabel('PSD (dB/Hz)');
 title('Welch periodogram of the discriminator output');
-
-

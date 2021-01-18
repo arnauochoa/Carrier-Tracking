@@ -1,11 +1,13 @@
-function [cm] = localCodeReplica(prn, kDelay, tC, tVec)
+function [cm] = localCodeReplica(prn, kDelay, tC, tVec, fDoppler)
 
-% Initializations
-
+% Obtain code for specific satellite prn
 code        = ca_code(prn);
+% Code duration due to Doppler
+fChip = 1/tC;
+tChipDoppler = 1/(fChip + fDoppler);
 % Code samples
-c           = create_code_samples(code, tVec/tC); %normalize tvec wrt chip duration
+c           = create_code_samples(code, tVec/tChipDoppler); %normalize tvec wrt chip duration
 % Shift in time
-cm          = circshift(c, kDelay); % extra -1 accounts for first sample which is code bit 1023 due to t=0
+cm          = circshift(c, kDelay);
 % cm  = [cm(end-kDelay+1:end) cm(1:end-kDelay)];
 end

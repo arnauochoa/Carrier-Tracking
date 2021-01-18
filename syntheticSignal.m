@@ -2,8 +2,7 @@ function [signal] = syntheticSignal(prn, kDelay, A, cno, tC, fIF, phi, tVec, fDo
 % This function generates a synthetic signal with the specified parameters
 
 % Initializations
-
-[cm] = localCodeReplica(prn, kDelay, tC, tVec);
+[cm] = localCodeReplica(prn, kDelay, tC, tVec, 0);%fDoppler
 
 % Noise
 cno         = 10^(cno/10);

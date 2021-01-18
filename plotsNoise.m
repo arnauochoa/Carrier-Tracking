@@ -3,6 +3,7 @@ clear all; close all; clc;
 Kpll = [0.01 0.05 0.1 0.5];
 cn0 = [35 40 45 50 60];
 
+%% TODO change noise power in dB by STD in linear
 noisePowerK001 = [652.237448 183.196869 52.791025 16.658201 1.599654];
 thresholdK001 = [500 500 500 500 500];
 noisePowerK005 = [677.620497 183.658355 54.505032 16.910811 1.639800];
